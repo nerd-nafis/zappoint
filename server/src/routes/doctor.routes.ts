@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { requireAuth, requireRole } from "../middlewares/auth";
+import { createDoctor, listDoctors, updateDoctor, deleteDoctor } from "../controllers/doctor.controller";
+const r = Router();
+r.use(requireAuth, requireRole("admin"));
+r.get("/", listDoctors);
+r.post("/", createDoctor);
+r.patch("/:id", updateDoctor);
+r.delete("/:id", deleteDoctor);
+export default r;

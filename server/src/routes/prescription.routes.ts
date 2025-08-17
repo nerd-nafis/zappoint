@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { requireAuth, requireRole } from "../middlewares/auth";
+import { createPrescription, listPrescriptions, updatePrescription, deletePrescription, downloadPdf } from "../controllers/prescription.controller";
+const r = Router();
+r.use(requireAuth);
+r.get("/", listPrescriptions);
+r.post("/", requireRole("doctor","admin"), createPrescription);
+r.patch("/:id", requireRole("doctor","admin"), updatePrescription);
+r.delete("/:id", requireRole("admin"), deletePrescription);
+r.get("/:id/pdf", downloadPdf);
+export default r;

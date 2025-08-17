@@ -1,0 +1,97 @@
+:root {
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #6b7280;
+    --ring: #e5e7eb;
+    --pill-pend: #fde68a;
+    --pill-done: #bbf7d0;
+    --pill-cancel: #fecaca;
+    --dashboard-bg: #111; 
+  }
+  
+  * { box-sizing: border-box; }
+  body {  background: var(--bg); color: var(--ink); }
+  
+  .dash {
+    display: grid !important;
+    grid-template-columns: 260px 1fr !important;
+    min-height: 100vh;
+    width: 100%;
+    background-color: var(--dashboard-bg);
+  }
+  
+  .dash__aside {
+    border-right: 0px solid var(--ring);
+    background: var(--dashboard-bg);
+    padding: 20px 16px;
+    display: flex; flex-direction: column;
+    color: #fff;
+  }
+  .brand { font-weight: 800; font-size: 20px; margin-bottom: 20px; }
+  .nav { display: grid; gap: 6px; }
+  .nav a {
+    padding: 10px 12px; border-radius: 10px; text-decoration: none; color: #FFF;
+  }
+  .nav a:hover { background: var(--bg); }
+  .aside__spacer { flex: 1; }
+  .aside__settings { color: var(--muted); font-size: 13px; }
+  
+  .dash__main { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; background-color: #FFF; margin: 15px; border-radius: 15px;}
+  
+  .topbar { display: flex; align-items: center; gap: 12px; }
+  .search {
+    flex: 1; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--ring); outline: none;
+  }
+  .whoami { display: grid; text-align: right; }
+  .whoami__name { font-weight: 600; }
+  .whoami__role { font-size: 12px; color: var(--muted); }
+  
+  .heroRow { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; min-height: 20vh; }
+  .card {
+    background: var(--card); border: 1px solid var(--ring); border-radius: 16px; padding: 16px;
+  }
+  .hero { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; background: linear-gradient(180deg, #e0f2fe, #fff); }
+  .hero__greeting { color: var(--muted); text-transform: capitalize; }
+  .hero__name { font-size: 22px; font-weight: 700; }
+  .hero__meta { color: var(--muted); display: flex; gap: 8px; }
+  
+  .upcoming .card__title { font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .viewAll { font-size: 12px; color: #2563eb; text-decoration: none; }
+  .upcoming__list { margin-top: 10px; display: grid; gap: 10px; }
+  .upcoming__item {
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    padding: 10px; border: 1px solid var(--ring); border-radius: 12px;
+    background: #fff;
+  }
+  .upcoming__who { display: flex; align-items: center; gap: 10px; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--bg); font-weight: 700;
+  }
+  .who__name { font-weight: 600; }
+  .who__sub { font-size: 12px; color: var(--muted); }
+  
+  .upcoming__right { display: flex; align-items: center; gap: 10px; }
+  .when__time { font-weight: 600; }
+  
+  .pill { padding: 4px 10px; border-radius: 999px; font-size: 12px; border: 1px solid var(--ring); }
+  .pill--pending { background: var(--pill-pend); }
+  .pill--done { background: var(--pill-done); }
+  .pill--cancelled { background: var(--pill-cancel); }
+  
+  .statsRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat { display: grid; gap: 8px; }
+  .stat__label { color: var(--muted); font-size: 12px; }
+  .stat__value { font-size: 22px; font-weight: 800; }
+  .quick { display: grid; place-items: center; text-decoration: none; font-weight: 700; color: var(--ink); }
+  
+  .skeleton, .empty { color: var(--muted); padding: 12px; text-align: center; border: 1px dashed var(--ring); border-radius: 12px; }
+  
+  @media (max-width: 920px){
+    .dash { grid-template-columns: 1fr; }
+    .dash__aside { display: none; }
+    .heroRow { grid-template-columns: 1fr; }
+    .statsRow { grid-template-columns: repeat(2, 1fr); }
+  }
+  
