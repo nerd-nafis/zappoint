@@ -5,8 +5,11 @@ import morgan from "morgan";
 import authRoutes from "./routes/auth.routes";
 import doctorRoutes from "./routes/doctor.routes";
 import appointmentRoutes from "./routes/appointment.routes";
+
 import prescriptionRoutes from "./routes/prescription.routes";
 import { errorHandler } from "./middlewares/error";
+
+
 
 const app = express();
 app.use(cors());

@@ -1,8 +1,10 @@
 // src/api/endpoints.ts
 import http, { API_PREFIX } from "./http";
 
+
 // tiny helper to join prefix + path cleanly
 const p = (path: string) => `${API_PREFIX}${path}`;
+
 
 // Auth endpoints
 export const Auth = {
@@ -26,4 +28,11 @@ export const Appointments = {
   create: (data: any) => http.post(p("/appointments"), data),
   update: (id: string, data: any) => http.put(p(`/appointments/${id}`), data),
   remove: (id: string) => http.delete(p(`/appointments/${id}`)),
+};
+
+
+// NEW: Prescriptions
+export const Prescriptions = {
+  create: (data: any) => http.post(p("/prescriptions"), data),               // { appointmentId, medicines[], advice }
+  pdf:    (id: string)   => http.get(p(`/prescriptions/${id}/pdf`), { responseType: "blob" }), // download
 };

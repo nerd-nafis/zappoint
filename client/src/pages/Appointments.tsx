@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Appointments, Doctors } from "../api/endpoints";
+import { Appointments as API, Doctors } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 
+// ---- Types (robust for populated vs id) ----
+type UserRef = string | { _id: string; name?: string; email?: string };
+type DoctorRef = string | { _id: string; user?: UserRef };
 
 type Appointment = {
   _id?: string;
@@ -11,11 +14,23 @@ type Appointment = {
   problem?: string;
   status: "pending" | "completed" | "cancelled";
   scheduledAt: string; // ISO
-  doctor?: { _id: string; user?: { name: string; email: string } };
-  doctorId?: string; // for create/update payloads if backend expects ID separately
+  doctor?: DoctorRef | null;
+  studentId?: string | null;
 };
 
 type Mode = { kind: "idle" } | { kind: "create" } | { kind: "edit"; appt: Appointment };
+
+// ---- Helpers ----
+function getDoctorId(doc: DoctorRef | null | undefined): string {
+  if (!doc) return "";
+  return typeof doc === "string" ? doc : (doc._id || "");
+}
+function getDoctorName(doc: DoctorRef | null | undefined): string {
+  if (!doc || typeof doc === "string") return "—";
+  const u = doc.user;
+  if (!u || typeof u === "string") return "—";
+  return u.name || "—";
+}
 
 export default function AppointmentsPage() {
   const { user } = useAuth();
@@ -31,9 +46,10 @@ export default function AppointmentsPage() {
     setErr("");
     setLoading(true);
     try {
+      // Always try to load doctors; if forbidden for doctor role, fall back to []
       const [a, d] = await Promise.all([
-        Appointments.list(),
-        user?.role === "admin" ? Doctors.list() : Promise.resolve({ data: { doctors: [] } }),
+        API.list(),
+        Doctors.list().catch(() => ({ data: { doctors: [] } })),
       ]);
       const arr = a.data?.appointments || a.data || [];
       const docs = d.data?.doctors || d.data || [];
@@ -60,8 +76,8 @@ export default function AppointmentsPage() {
   const upsert = async (payload: Partial<Appointment>, existing?: Appointment) => {
     setErr("");
     try {
-      if (existing?._id) await Appointments.update(existing._id, payload);
-      else await Appointments.create(payload);
+      if (existing?._id) await API.update(existing._id, payload);
+      else await API.create(payload);
       await load();
       setMode({ kind: "idle" });
     } catch (e: any) {
@@ -74,7 +90,7 @@ export default function AppointmentsPage() {
     setBusyId(id);
     setErr("");
     try {
-      await Appointments.remove(id);
+      await API.remove(id);
       setAppts(prev => prev.filter(a => a._id !== id));
     } catch (e: any) {
       setErr(e?.response?.data?.message || "Delete failed");
@@ -118,30 +134,27 @@ export default function AppointmentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(a => {
-                const docName = a.doctor?.user?.name || "—";
-                return (
-                  <tr key={a._id}>
-                    <td style={td}>{a.studentName}</td>
-                    <td style={td}>{a.email}</td>
-                    <td style={td}>{docName}</td>
-                    <td style={td}>{new Date(a.scheduledAt).toLocaleString()}</td>
-                    <td style={td}>{a.status}</td>
-                    <td style={td}>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button style={btnGhost} onClick={() => setMode({ kind: "edit", appt: a })}>Edit</button>
-                        <button
-                          style={btnDanger}
-                          disabled={busyId === a._id}
-                          onClick={() => a._id && remove(a._id)}
-                        >
-                          {busyId === a._id ? "Deleting…" : "Delete"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filtered.map(a => (
+                <tr key={a._id}>
+                  <td style={td}>{a.studentName}</td>
+                  <td style={td}>{a.email}</td>
+                  <td style={td}>{getDoctorName(a.doctor)}</td>
+                  <td style={td}>{new Date(a.scheduledAt).toLocaleString()}</td>
+                  <td style={td}>{a.status}</td>
+                  <td style={td}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button style={btnGhost} onClick={() => setMode({ kind: "edit", appt: a })}>Edit</button>
+                      <button
+                        style={btnDanger}
+                        disabled={busyId === a._id}
+                        onClick={() => a._id && remove(a._id)}
+                      >
+                        {busyId === a._id ? "Deleting…" : "Delete"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
@@ -172,7 +185,7 @@ function AppointmentForm({
   onCancel: () => void;
   onSubmit: (data: Partial<Appointment>) => void;
 }) {
-  const { user } = useAuth(); // NEW
+  const { user } = useAuth();
 
   const [studentName, setStudentName] = useState(appt?.studentName || "");
   const [email, setEmail] = useState(appt?.email || "");
@@ -182,15 +195,10 @@ function AppointmentForm({
   const [scheduledAt, setScheduledAt] = useState(
     appt?.scheduledAt ? appt.scheduledAt.slice(0, 16) : new Date().toISOString().slice(0, 16)
   );
-  // for datetime-local input
-  
-  
-  const [doctor, setDoctor] = useState(
-    (appt?.doctor as any)?._id || (appt as any)?.doctor || ""
-  );
 
-  const [studentId, setStudentId] = useState(
-    (appt as any)?.studentId || (user?.role === "student" ? (user as any)?._id : "")
+  // doctor as string id
+  const [doctor, setDoctor] = useState(
+    appt ? getDoctorId(appt.doctor) : ""
   );
 
   const [saving, setSaving] = useState(false);
@@ -199,12 +207,11 @@ function AppointmentForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
+
     if (!studentName.trim()) return setErr("Patient name required");
     if (!email.trim()) return setErr("Email required");
     if (!doctor) return setErr("Doctor required");
-    if (!studentId) return setErr("Student ID required");
     if (!scheduledAt) return setErr("Date/time required");
-
 
     const payload: Partial<Appointment> = {
       studentName,
@@ -213,9 +220,15 @@ function AppointmentForm({
       problem: problem || undefined,
       status,
       scheduledAt: new Date(scheduledAt).toISOString(),
-      doctor,
-      studentId,
+      doctor, // backend expects doctor id
     };
+
+    // Optional: if you ever have a 'student' role logged in, attach their id
+   
+    // keep existing studentId if editing an appointment that already has it
+    if (appt && (appt as any).studentId) {
+      (payload as any).studentId = (appt as any).studentId;
+    }
 
     try {
       setSaving(true);
@@ -225,21 +238,36 @@ function AppointmentForm({
     }
   };
 
+  const isDoctorUser = user?.role === "doctor";
+  const hasDoctorOptions = Array.isArray(doctors) && doctors.length > 0;
+  const currentOptionNeeded = !hasDoctorOptions && !!doctor;
+
   return (
     <form onSubmit={submit} style={{ display: "grid", gap: 12, minWidth: 420 }}>
       <h3 style={{ margin: 0 }}>{appt?._id ? "Edit appointment" : "New appointment"}</h3>
       {err && <div style={alertError}>{err}</div>}
 
-      <label style={label}>Patient name<input style={input} value={studentName} onChange={e=>setStudentName(e.target.value)} /></label>
-      <label style={label}>Email<input style={input} value={email} onChange={e=>setEmail(e.target.value)} /></label>
-      <label style={label}>Contact<input style={input} value={contact} onChange={e=>setContact(e.target.value)} /></label>
-      <label style={label}>Problem<input style={input} value={problem} onChange={e=>setProblem(e.target.value)} /></label>
+      <label style={label}>Patient name<input style={input} value={studentName} onChange={e => setStudentName(e.target.value)} /></label>
+      <label style={label}>Email<input style={input} value={email} onChange={e => setEmail(e.target.value)} /></label>
+      <label style={label}>Contact<input style={input} value={contact} onChange={e => setContact(e.target.value)} /></label>
+      <label style={label}>Problem<input style={input} value={problem} onChange={e => setProblem(e.target.value)} /></label>
 
       <label style={label}>
         Doctor
-        <select style={input} value={doctor} onChange={e=>setDoctor(e.target.value)}>
+        <select
+          style={input}
+          value={doctor}
+          onChange={e => setDoctor(e.target.value)}
+          disabled={isDoctorUser && !hasDoctorOptions} // if doctor user and no list, lock current
+        >
           <option value="">Select a doctor…</option>
-          {doctors.map((d:any) => (
+          {/* If we don't have a list (e.g., doctor role blocked by API), keep the current one selectable */}
+          {currentOptionNeeded && (
+            <option value={doctor}>
+              {(appt && getDoctorName(appt.doctor)) || "Assigned doctor"}
+            </option>
+          )}
+          {doctors.map((d: any) => (
             <option key={d._id || d.id} value={d._id || d.id}>
               {d.user?.name || d.name} ({d.specialization || "General"})
             </option>
@@ -247,27 +275,14 @@ function AppointmentForm({
         </select>
       </label>
 
-      {/* Admins can pick/paste a student id. If the logged-in user is a student, this is prefilled and hidden */}
-      {user?.role === "admin" && (
-        <label style={label}>
-          Student ID
-          <input
-            style={input}
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            placeholder="Paste the student's _id"
-          />
-        </label>
-      )}
-
       <label style={label}>
         Scheduled at
-        <input type="datetime-local" style={input} value={scheduledAt} onChange={e=>setScheduledAt(e.target.value)} />
+        <input type="datetime-local" style={input} value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} />
       </label>
 
       <label style={label}>
         Status
-        <select style={input} value={status} onChange={e=>setStatus(e.target.value as any)}>
+        <select style={input} value={status} onChange={e => setStatus(e.target.value as any)}>
           <option value="pending">Pending</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
@@ -282,12 +297,12 @@ function AppointmentForm({
   );
 }
 
-// shared mini UI styles (duplicate with Doctors.tsx for now)
+// ---- Shared mini UI styles ----
 const table: React.CSSProperties = { width: "100%", borderCollapse: "separate", borderSpacing: 0 };
 const th: React.CSSProperties = { textAlign: "left", fontWeight: 700, fontSize: 13, color: "#6b7280", padding: "12px 12px", borderBottom: "1px solid #e5e7eb" };
 const td: React.CSSProperties = { padding: "12px 12px", borderBottom: "1px solid #f1f5f9", fontSize: 14 };
-const label: React.CSSProperties = { display: "grid", gap: 6, fontSize: 12, color: "#334155" };
-const input: React.CSSProperties = { padding: "10px 12px", borderRadius: 10, border: "1px solid #e5e7eb", outline: "none" };
+const label: React.CSSProperties = { display: "grid", gap: 6, fontSize: 14, color: "#111111" };
+const input: React.CSSProperties = { padding: "10px 12px", borderRadius: 10, border: "1px solid #e5e7eb", outline: "none", background: '#eeeeee', fontSize: 12, color: '#1E1E1E'  };
 const btnPrimary: React.CSSProperties = { padding: "10px 12px", border: "1px solid #1d4ed8", background: "#2563eb", color: "#fff", borderRadius: 10, cursor: "pointer" };
 const btnDanger: React.CSSProperties = { padding: "8px 12px", border: "1px solid #ef4444", background: "#ef4444", color: "#fff", borderRadius: 10, cursor: "pointer" };
 const btnGhost: React.CSSProperties = { padding: "8px 12px", border: "1px solid #e5e7eb", background: "#fff", color: "#0f172a", borderRadius: 10, cursor: "pointer" };
@@ -301,14 +316,14 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
   }, [onClose]);
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, display: "grid", placeItems: "center",
-      background: "rgba(0,0,0,0.35)", zIndex: 50
-    }} onClick={onClose}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: 16, minWidth: 420,
-        border: "1px solid #e5e7eb", boxShadow: "0 10px 30px rgba(0,0,0,0.12)"
-      }} onClick={(e)=>e.stopPropagation()}>
+    <div
+      style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", background: "rgba(0,0,0,0.35)", zIndex: 50 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#fff", borderRadius: 16, padding: 16, minWidth: 420, border: "1px solid #e5e7eb", boxShadow: "0 10px 30px rgba(0,0,0,0.12)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </div>

@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import DashboardLayout, { Overview } from "./pages/Dashboard";
 import DoctorsPage from "./pages/Doctors";
 import AppointmentsPage from "./pages/Appointments";
+import PrescriptionPage from "./pages/Prescription";
 
 function Private({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ export default function App() {
             <Route index element={<Overview />} />
             <Route path="doctors" element={<DoctorsPage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
+            <Route path="prescriptions/new" element={<PrescriptionPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

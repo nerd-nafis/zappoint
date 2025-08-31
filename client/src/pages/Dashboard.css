@@ -33,7 +33,7 @@
   .nav a {
     padding: 10px 12px; border-radius: 10px; text-decoration: none; color: #FFF;
   }
-  .nav a:hover { background: var(--bg); }
+  .nav a:hover { background: rgba(255,255,255, 0.1); }
   .aside__spacer { flex: 1; }
   .aside__settings { color: var(--muted); font-size: 13px; }
   
@@ -41,7 +41,7 @@
   
   .topbar { display: flex; align-items: center; gap: 12px; }
   .search {
-    flex: 1; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--ring); outline: none;
+    flex: 1; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--ring); outline: none ;
   }
   .whoami { display: grid; text-align: right; }
   .whoami__name { font-weight: 600; }

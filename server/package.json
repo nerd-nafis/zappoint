@@ -21,7 +21,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.1",
     "morgan": "^1.10.1",
-    "pdfkit": "^0.17.1",
+    "pdfkit": "^0.17.2",
+    "react-icons": "^5.5.0",
     "zod": "^4.0.17"
   },
   "devDependencies": {
@@ -31,6 +32,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.2.1",
+    "@types/pdfkit": "^0.17.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.2"
   }

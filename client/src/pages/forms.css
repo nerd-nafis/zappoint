@@ -1,0 +1,66 @@
+:root{
+    --ui-bg: #fff;
+    --ui-text: #0f172a;      /* slate-900 */
+    --ui-sub: #334155;       /* slate-700 */
+    --ui-border: #e5e7eb;    /* gray-200 */
+    --ui-border-strong: #cbd5e1; /* slate-300 */
+    --ui-ring: rgba(37, 99, 235, .35); /* blue-600 ring */
+    --ui-primary: #2563eb;   /* blue-600 */
+    --ui-danger: #ef4444;    /* red-500 */
+  }
+  
+  .field { display: grid; gap: 6px; font-size: 12px; color: var(--ui-sub); }
+  
+  .ui-input {
+    width: 100%;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--ui-border);
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+  }
+  
+  .ui-input:hover {
+    border-color: var(--ui-border-strong);
+  }
+  
+  .ui-input:focus {
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 4px var(--ui-ring);
+  }
+  
+  .ui-input::placeholder { color: #94a3b8; } /* slate-400 */
+  
+  .ui-input[disabled] {
+    background: #f8fafc;  /* slate-50 */
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+  
+  .ui-input.error {
+    border-color: var(--ui-danger);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, .25);
+  }
+  
+  /* Selects and textareas share the same look */
+  select.ui-input { padding-right: 36px; }
+  textarea.ui-input { min-height: 96px; resize: vertical; }
+  
+  /* Optional: compact variant for small inputs */
+  .ui-input.sm { padding: 8px 10px; border-radius: 8px; }
+  
+  /* Optional: input group with a label and helper text */
+  .helper { font-size: 11px; color: #64748b; } /* slate-500 */
+  
+  /* Icon-only buttons you used in the prescription form */
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; line-height: 0;
+    border-radius: 10px; cursor: pointer; border: 1px solid var(--ui-border);
+    background: #fff; color: var(--ui-text);
+  }
+  .icon-btn:hover { border-color: var(--ui-border-strong); }
+  .icon-btn.danger { border-color: var(--ui-danger); background: var(--ui-danger); color: #fff; }
+  
